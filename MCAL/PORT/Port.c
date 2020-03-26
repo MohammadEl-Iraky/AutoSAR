@@ -46,7 +46,7 @@ void Port_Init( const Port_ConfigType* ConfigPtr )
     uint8 Port_no;
     uint8 Pin_no;
     uint8 i = 0;
-    volatile GPIO_Type * GpioPtr = NULL_PTR;
+    uint32 GpioBase;
 #if developer_error
     if( NULL_PTR == ConfigPtr )
     {
@@ -56,6 +56,7 @@ void Port_Init( const Port_ConfigType* ConfigPtr )
 #endif
     {
         g_ConfigPtr = ConfigPtr->Channels;
+        HW_REG(RCGCGPIO) |= (1<<0)|(1<<2)|(1<<1)|(1<<3)|(1<<4)|(1<<5);
 
         /* Enable clocks for all the Ports */
 
@@ -66,85 +67,84 @@ void Port_Init( const Port_ConfigType* ConfigPtr )
 
             switch( Port_no )   /* Get the current GPIO port */
             {
-                case 0: GpioPtr = (GPIOA);             /* Gpio A base address */
+                case 0: GpioBase = GPIOA_BASE;             /* Gpio A base address */
                         break;
-                case 1: GpioPtr = (GPIOB);             /* Gpio B base address */
+                case 1: GpioBase = GPIOB_BASE;             /* Gpio B base address */
                         break;
-                case 2: GpioPtr = (GPIOC);             /* Gpio C base address */
+                case 2: GpioBase = GPIOC_BASE;             /* Gpio C base address */
                         break;
-                case 3: GpioPtr = (GPIOD);             /* Gpio D base address */
+                case 3: GpioBase = GPIOD_BASE;             /* Gpio D base address */
                         break;
-                case 4: GpioPtr = (GPIOE);             /* Gpio E base address */
+                case 4: GpioBase = GPIOE_BASE;             /* Gpio E base address */
                         break;
-                case 5: GpioPtr = (GPIOF);             /* Gpio F base address */
+                case 5: GpioBase = GPIOF_BASE;             /* Gpio F base address */
                         break;
              }
 
-            /* Initial Pin value ( Configured before direction ) */
-            if( STD_HIGH == ConfigPtr->Channels[i].InitValue  )
-            {
-                SET_BIT( GpioPtr->DATA, Pin_no );
-            }
-            else
-            {
-                CLEAR_BIT( GpioPtr->DATA, Pin_no );
-            }
-
             /* Initial Pin direction */
-            if(  PORT_PIN_OUT == ConfigPtr->Channels[i].Direction )
-            {
-                SET_BIT( GpioPtr->DIR, Pin_no );
-            }
-            else
-            {
-                CLEAR_BIT( GpioPtr->DIR, Pin_no );
-            }
+             if(  PORT_PIN_OUT == g_ConfigPtr[i].Direction )
+             {
+                 SET_BIT( HW_REG( GpioBase + GPIO_DIR_OFFSET ), Pin_no );
+             }
+             else
+             {
+                 CLEAR_BIT( HW_REG( GpioBase + GPIO_DIR_OFFSET ), Pin_no );
+             }
 
+             /* Initial Pin value */
+             if( STD_HIGH == g_ConfigPtr[i].InitValue  )
+             {
+                 SET_BIT( HW_REG( GpioBase + GPIO_DATA_OFFSET ), Pin_no );
+             }
+             else
+             {
+                 CLEAR_BIT( HW_REG( GpioBase + GPIO_DATA_OFFSET ), Pin_no );
+             }
 
-            /* Initial Pin Mode */
-            if( PORTX_PINX_DIO == g_ConfigPtr[i].Mode )         /* If its DIO */
-            {
-                CLEAR_BIT( GpioPtr->AFSEL, Pin_no );
-                SET_BIT( GpioPtr->DEN, Pin_no );
-                CLEAR_BIT( GpioPtr->AMSEL, Pin_no );
-            }
-            else if( PORTX_PINX_ADC == g_ConfigPtr[i].Mode )    /* If its ADC */
-            {
-                CLEAR_BIT( GpioPtr->DEN, Pin_no );
-                SET_BIT( GpioPtr->AMSEL , Pin_no );
-                SET_BIT( GpioPtr->AFSEL, Pin_no );
-            }
-            else                                                /* For a different alternate function */
-            {
-                SET_BIT( GpioPtr->AFSEL, Pin_no );
-                GpioPtr->PCTL |= ( (g_ConfigPtr[i].Mode)<<(Pin_no*4) );
-                //GpioPtr->PCTL = ((GpioPtr->PCTL)&(0x0F<<(Pin_no*4))) | (g_ConfigPtr[i].Mode)<<(Pin_no*4);
-            }
+             /* Initial Pin Mode */
+             if( PORTX_PINX_DIO == g_ConfigPtr[i].Mode )         /* If its DIO */
+             {
+                 CLEAR_BIT( HW_REG( GpioBase + GPIO_AFSEL_OFFSET ), Pin_no );
+                 SET_BIT( HW_REG( GpioBase + GPIO_DEN_OFFSET ), Pin_no );
+                 CLEAR_BIT( HW_REG( GpioBase + GPIO_AMSEL_OFFSET ), Pin_no );
+             }
+             else if( PORTX_PINX_ADC == g_ConfigPtr[i].Mode )    /* If its ADC */
+             {
+                 CLEAR_BIT( HW_REG( GpioBase + GPIO_DEN_OFFSET ), Pin_no );
+                 SET_BIT( HW_REG( GpioBase + GPIO_AMSEL_OFFSET ) , Pin_no );
+                 SET_BIT( HW_REG( GpioBase + GPIO_AFSEL_OFFSET ), Pin_no );
+             }
+             else                                                /* For a different alternate function */
+             {
+                 SET_BIT( HW_REG( GpioBase + GPIO_AFSEL_OFFSET ), Pin_no );
+                 HW_REG( GpioBase + GPIO_PCTL_OFFSET ) |= ( (g_ConfigPtr[i].Mode)<<(Pin_no*4) );
+                 //GpioBase->PCTL = ((GpioBase->PCTL)&(0x0F<<(Pin_no*4))) | (g_ConfigPtr[i].Mode)<<(Pin_no*4);
+             }
 
-            /* Internal resistance functionality */
-            if( PULL_UP_ON == ConfigPtr->Channels[i].InternalRes )
-            {
-                SET_BIT( GpioPtr->PUR, Pin_no );
-            }
-            else if( PULL_DOWN_ON == ConfigPtr->Channels[i].InternalRes )
-            {
-                SET_BIT( GpioPtr->PDR, Pin_no );
-            }
-            else
-            {
-                CLEAR_BIT( GpioPtr->PUR, Pin_no );
-                CLEAR_BIT( GpioPtr->PDR, Pin_no );
-            }
+             /* Internal resistance functionality */
+             if( PULL_UP_ON == ConfigPtr->Channels[i].InternalRes )
+             {
+                 SET_BIT( HW_REG( GpioBase + GPIO_PUR_OFFSET ), Pin_no );
+             }
+             else if( PULL_DOWN_ON == ConfigPtr->Channels[i].InternalRes )
+             {
+                 SET_BIT( HW_REG( GpioBase + GPIO_PDR_OFFSET ), Pin_no );
+             }
+             else
+             {
+                 CLEAR_BIT( HW_REG( GpioBase + GPIO_PUR_OFFSET ), Pin_no );
+                 CLEAR_BIT( HW_REG( GpioBase + GPIO_PDR_OFFSET ), Pin_no );
+             }
 
-            /* Pin Open Drain functionality */
-            if( OPEN_DRAIN == ConfigPtr->Channels[i].OpenDrain )
-            {
-                SET_BIT( GpioPtr->ODR, Pin_no );
-            }
-            else
-            {
-                CLEAR_BIT( GpioPtr->ODR, Pin_no );
-            }
+             /* Pin Open Drain functionality */
+             if( OPEN_DRAIN == ConfigPtr->Channels[i].OpenDrain )
+             {
+                 SET_BIT( HW_REG( GpioBase + GPIO_ODR_OFFSET ), Pin_no );
+             }
+             else
+             {
+                 CLEAR_BIT( HW_REG( GpioBase + GPIO_ODR_OFFSET ), Pin_no );
+             }
         }
     }
 }
@@ -166,7 +166,7 @@ void Port_SetPinDirection( Port_PinType Pin, Port_PinDirectionType Direction )
 {
     uint8 Port_no;
     uint8 Pin_no;
-    volatile GPIO_Type * GpioPtr = NULL_PTR;
+    uint32 GpioBase;
 
 #if 0
     if( PORT_UNINIT == g_PortStatus )
@@ -198,30 +198,31 @@ void Port_SetPinDirection( Port_PinType Pin, Port_PinDirectionType Direction )
     Pin_no = GET_BIT_FROM_PIN( Pin );
 
     switch( Port_no )   /* Get the current GPIO port */
-    {
-        case 0: GpioPtr = (GPIOA);             /* Gpio A base address */
-                break;
-        case 1: GpioPtr = (GPIOB);             /* Gpio B base address */
-                break;
-        case 2: GpioPtr = (GPIOC);             /* Gpio C base address */
-                break;
-        case 3: GpioPtr = (GPIOD);             /* Gpio D base address */
-                break;
-        case 4: GpioPtr = (GPIOE);             /* Gpio E base address */
-                break;
-        case 5: GpioPtr = (GPIOF);             /* Gpio F base address */
-                break;
+     {
+         case 0: GpioBase = GPIOA_BASE;             /* Gpio A base address */
+                 break;
+         case 1: GpioBase = GPIOB_BASE;             /* Gpio B base address */
+                 break;
+         case 2: GpioBase = GPIOC_BASE;             /* Gpio C base address */
+                 break;
+         case 3: GpioBase = GPIOD_BASE;             /* Gpio D base address */
+                 break;
+         case 4: GpioBase = GPIOE_BASE;             /* Gpio E base address */
+                 break;
+         case 5: GpioBase = GPIOF_BASE;             /* Gpio F base address */
+                 break;
+      }
+
+     /* Change Pin direction */
+     if(  PORT_PIN_OUT == g_ConfigPtr[Pin].Direction )
+     {
+         SET_BIT( HW_REG( GpioBase + GPIO_DIR_OFFSET ), Pin_no );
+     }
+     else
+     {
+         CLEAR_BIT( HW_REG( GpioBase + GPIO_DIR_OFFSET ), Pin_no );
      }
 
-    /* Initial Pin direction */
-    if(  PORT_PIN_OUT == g_ConfigPtr[Pin].Direction )
-    {
-        SET_BIT( GpioPtr->DIR, Pin_no );
-    }
-    else
-    {
-        CLEAR_BIT( GpioPtr->DIR, Pin_no );
-    }
 
 }
 

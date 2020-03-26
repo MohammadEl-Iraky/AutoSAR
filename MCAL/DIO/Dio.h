@@ -8,11 +8,10 @@
 #ifndef MCAL_DIO_DIO_H_
 #define MCAL_DIO_DIO_H_
 
-#include <MCAL/DIO/Dio_Cfg.h>
-#include <MCAL/DIO/Gpio_Regs.h>
-#include <Std_Types.h>
+#include "Dio_Cfg.h"
+#include "Gpio_Regs.h"
+#include "Std_Types.h"
 #include "../../Det.h"
-#include "../../Bit_Math.h"
 
 
 #define DIO_INIT    (0x01U)
@@ -60,6 +59,7 @@ typedef struct
     Dio_PortType    Port_no;
 }Dio_ConfigChannel;
 
+/* The type Dio_ConfigType is a type for the external data structure containing the initialization data for the Dio Driver. */
 typedef struct
 {
     Dio_ConfigChannel Channels[ DIO_CONFIGURED_CHANNELS ];

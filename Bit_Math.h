@@ -18,4 +18,7 @@
 #define GET_BIT( REG, BIT_NO )           (((REG)>>(BIT_NO))&1)
 
 
+#define HW_REG(reg)         (*((volatile uint32 *)(reg)))
+
+
 #endif /* BIT_MATH_H_ */

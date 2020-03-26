@@ -6,13 +6,15 @@
  */
 
 #include "Dio.h"
+#include "../../Bit_Math.h"
+
 
 /*******************************************************************************************************************
  *                                             Dio global variables
  *******************************************************************************************************************/
 
-#if DIO_DEV_ERROR_DETECT
-static uint8 g_Dio_status = DIO_UNINIT;
+#if DIO_DEV_ERROR_DETECT == STD_ON
+static uint8 g_DioStatus = DIO_UNINIT;
 #endif
 
 static const Dio_ConfigChannel * g_ChannelPtr = NULL_PTR;
@@ -35,7 +37,7 @@ static const Dio_ConfigChannel * g_ChannelPtr = NULL_PTR;
 
 void Dio_Init( const Dio_ConfigType * ConfigPtr )
 {
-#if DIO_DEV_ERROR_DETECT
+#if DIO_DEV_ERROR_DETECT == STD_ON
     if( ConfigPtr == NULL_PTR )
     {
       //  Det_ReportError(ModuleId, InstanceId, ApiId, ErrorId)
@@ -43,8 +45,8 @@ void Dio_Init( const Dio_ConfigType * ConfigPtr )
     else
 #endif
     {
-#if DIO_DEV_ERROR_DETECT
-        g_Dio_status = DIO_INIT;
+#if DIO_DEV_ERROR_DETECT == STD_ON
+        g_DioStatus = DIO_INIT;
 #endif
         g_ChannelPtr = ConfigPtr->Channels;
     }
@@ -70,7 +72,7 @@ Dio_LevelType Dio_ReadChannel( Dio_ChannelType channelId )
     volatile uint32 * PortDataPtr = NULL_PTR;
     uint8 result;
 
-#if DIO_DEV_ERROR_DETECT
+#if DIO_DEV_ERROR_DETECT == STD_ON
     if( DIO_CONFIGURED_CHANNELS <= channelId  )
     {
         /* Det_ReportError(ModuleId, InstanceId, ApiId, DIO_E_PARAM_INVALID_CHANNEL_ID ) */
@@ -82,7 +84,7 @@ Dio_LevelType Dio_ReadChannel( Dio_ChannelType channelId )
         /* Empty else */
     }
 
-    if( DIO_UNINIT == g_Dio_status )
+    if( DIO_UNINIT == g_DioStatus )
     {
         /* Det_ReportError */
     }
@@ -97,17 +99,17 @@ Dio_LevelType Dio_ReadChannel( Dio_ChannelType channelId )
     {
         switch( g_ChannelPtr[channelId].Port_no )   /* Get the Port address into the PortDataPtr variable */
         {
-            case 0: PortDataPtr = &(GPIOA->DATA);             /* Port A data address */
+            case 0: PortDataPtr = &HW_REG( GPIOA_BASE + GPIO_DATA_OFFSET );          /* Port A data address */
                     break;
-            case 1: PortDataPtr = &(GPIOB->DATA);             /* Port B data address */
+            case 1: PortDataPtr = &HW_REG( GPIOB_BASE + GPIO_DATA_OFFSET );          /* Port B data address */
                     break;
-            case 2: PortDataPtr = &(GPIOC->DATA);             /* Port C data address */
+            case 2: PortDataPtr = &HW_REG( GPIOC_BASE + GPIO_DATA_OFFSET );          /* Port C data address */
                     break;
-            case 3: PortDataPtr = &(GPIOD->DATA);             /* Port D data address */
+            case 3: PortDataPtr = &HW_REG( GPIOD_BASE + GPIO_DATA_OFFSET );          /* Port D data address */
                     break;
-            case 4: PortDataPtr = &(GPIOE->DATA);             /* Port E data address */
+            case 4: PortDataPtr = &HW_REG( GPIOE_BASE + GPIO_DATA_OFFSET );          /* Port E data address */
                     break;
-            case 5: PortDataPtr = &(GPIOF->DATA);             /* Port F data address */
+            case 5: PortDataPtr = &HW_REG( GPIOF_BASE + GPIO_DATA_OFFSET );          /* Port F data address */
                     break;
         }
 
@@ -139,7 +141,7 @@ void Dio_WriteChannel( Dio_ChannelType channelId, Dio_LevelType Level)
     uint8 error = STD_OFF;
     volatile uint32 * PortDataPtr = NULL_PTR;
 
-#if DIO_DEV_ERROR_DETECT
+#if DIO_DEV_ERROR_DETECT == STD_ON
     if( DIO_CONFIGURED_CHANNELS <= channelId  )
     {
         /*  Det_ReportError(ModuleId, InstanceId, ApiId, DIO_E_PARAM_INVALID_CHANNEL_ID ) */
@@ -151,7 +153,7 @@ void Dio_WriteChannel( Dio_ChannelType channelId, Dio_LevelType Level)
         /* Empty else */
     }
 
-    if( DIO_UNINIT == g_Dio_status )
+    if( DIO_UNINIT == g_DioStatus )
     {
         /* Det_ReportError */
     }
@@ -165,17 +167,17 @@ void Dio_WriteChannel( Dio_ChannelType channelId, Dio_LevelType Level)
     {
         switch( g_ChannelPtr[channelId].Port_no )
         {
-            case 0: PortDataPtr = &(GPIOA->DATA);             /* Port A data address */
+            case 0: PortDataPtr = &HW_REG( GPIOA_BASE + GPIO_DATA_OFFSET );          /* Port A data address */
                     break;
-            case 1: PortDataPtr = &(GPIOB->DATA);             /* Port B data address */
+            case 1: PortDataPtr = &HW_REG( GPIOB_BASE + GPIO_DATA_OFFSET );          /* Port B data address */
                     break;
-            case 2: PortDataPtr = &(GPIOC->DATA);             /* Port C data address */
+            case 2: PortDataPtr = &HW_REG( GPIOC_BASE + GPIO_DATA_OFFSET );          /* Port C data address */
                     break;
-            case 3: PortDataPtr = &(GPIOD->DATA);             /* Port D data address */
+            case 3: PortDataPtr = &HW_REG( GPIOD_BASE + GPIO_DATA_OFFSET );          /* Port D data address */
                     break;
-            case 4: PortDataPtr = &(GPIOE->DATA);             /* Port E data address */
+            case 4: PortDataPtr = &HW_REG( GPIOE_BASE + GPIO_DATA_OFFSET );          /* Port E data address */
                     break;
-            case 5: PortDataPtr = &(GPIOF->DATA);             /* Port F data address */
+            case 5: PortDataPtr = &HW_REG( GPIOF_BASE + GPIO_DATA_OFFSET );          /* Port F data address */
                     break;
         }
 
